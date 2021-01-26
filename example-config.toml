@@ -1,0 +1,3 @@
+[api]
+public_key = "changeme" # public key from https://developer.marvel.com/account
+private_key = "changeme" # private key from https://developer.marvel.com/account
