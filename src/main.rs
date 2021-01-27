@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .long("character_name")
                 .help("character name")
                 .value_name("character_name")));
-        
+
     let matches = app.get_matches();
 
     let config = get_config()?;
@@ -43,20 +43,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn get_characters(config: Config, character_name: Option<&str>) -> Result<(), Box<dyn std::error::Error>>  {
     let ts = get_timestamp()?;
-    
+
     let auth = format!("{}{}{}", ts, config.api.private_key, config.api.public_key);
 
     let hash = md5::compute(auth);
 
-    let url :String;
+    let options = match character_name { Some(name) => format!("&name={}", name), _ => String::from("") };
+    let url = format!("https://gateway.marvel.com:443/v1/public/characters?ts={}&apikey={}&hash={:x}{}", ts, config.api.public_key, hash, options);
 
-    if character_name.is_none() {
-        url = format!("https://gateway.marvel.com:443/v1/public/characters?ts={}&apikey={}&hash={:x}", ts, config.api.public_key, hash);
-    } else {
-        url = format!("https://gateway.marvel.com:443/v1/public/characters?&name={}&ts={}&apikey={}&hash={:x}", character_name.unwrap(), ts, config.api.public_key, hash);
-    }
-
-    let mut res = reqwest::blocking::get(&*url)?;
+    let mut res = reqwest::blocking::get(&url)?;
     let mut body = String::new();
     res.read_to_string(&mut body)?;
 
@@ -70,12 +65,12 @@ fn get_characters(config: Config, character_name: Option<&str>) -> Result<(), Bo
 fn get_timestamp() -> Result<u128, Box<dyn std::error::Error>> {
     let start = SystemTime::now();
     let duration = start.duration_since(UNIX_EPOCH)?;
-        
-    Ok(duration.as_millis())    
+
+    Ok(duration.as_millis())
 }
 
 fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
     let file = fs::read_to_string("config.toml")?;
-    let config: Config = toml::from_str(&*file)?;
+    let config: Config = toml::from_str(&file)?;
     Ok(config)
 }
